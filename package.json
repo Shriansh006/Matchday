@@ -1,0 +1,31 @@
+{
+  "name": "matchday",
+  "type": "module",
+  "version": "0.0.1",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "check": "astro check",
+    "data:names": "node scripts/extract-names.mjs",
+    "data:players": "node scripts/fetch-players.mjs",
+    "data": "npm run data:names && npm run data:players && npm run data:current",
+    "test": "bun scripts/test-games.ts",
+    "test:ui": "bun run build && bun scripts/smoke-grid.ts && bun scripts/smoke-lineup.ts",
+    "data:current": "node scripts/fetch-current-clubs.mjs"
+  },
+  "dependencies": {
+    "astro": "^7.3.2"
+  },
+  "allowScripts": {
+    "esbuild": true
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.10",
+    "happy-dom": "^20.14.5",
+    "typescript": "^6"
+  }
+}

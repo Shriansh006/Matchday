@@ -1,0 +1,117 @@
+---
+import Base from '../layouts/Base.astro';
+import { GAMES } from '../config';
+
+const xiDots = [
+  { x: 50, y: 90 },
+  { x: 20, y: 72 },
+  { x: 40, y: 76 },
+  { x: 60, y: 76 },
+  { x: 80, y: 72 },
+  { x: 30, y: 56 },
+  { x: 50, y: 58 },
+  { x: 70, y: 56 },
+  { x: 18, y: 40 },
+  { x: 50, y: 40 },
+  { x: 82, y: 40 },
+];
+
+const miniGrid = [
+  '', 'clue', 'clue', 'clue',
+  'clue', 'filled', '', '',
+  'clue', '', 'filled', '',
+  'clue', '', '', 'filled',
+];
+---
+
+<Base description="Two daily football games: build an XI from 11 clubs, and fill the Football Grid.">
+  <div class="dashboard">
+    <p class="selectTitle">Select the game you want to play</p>
+
+    <div class="gameCards">
+      <a class="gameCardLink" href={`/${GAMES.lineup.slug}`}>
+        <div class="cardDiv">
+          <div class="cardArt">
+            <div class="miniPitch">
+              {xiDots.map((d) => <span class="miniDot" style={`left:${d.x}%;top:${d.y}%`} />)}
+            </div>
+          </div>
+          <div class="cardText">
+            <p class="playLabel">Play</p>
+            <p class="cardTitle">{GAMES.lineup.name}</p>
+          </div>
+        </div>
+      </a>
+
+      <a class="gameCardLink" href={`/${GAMES.grid.slug}`}>
+        <div class="cardDiv">
+          <div class="cardArt">
+            <div class="miniGrid">
+              {miniGrid.map((c) => <span class={`miniCell ${c}`.trim()} />)}
+            </div>
+          </div>
+          <div class="cardText">
+            <p class="playLabel">Play</p>
+            <p class="cardTitle">{GAMES.grid.name}</p>
+          </div>
+        </div>
+      </a>
+    </div>
+
+    <p class="datasetLine muted" id="dataset"></p>
+
+    <section class="faq" aria-labelledby="faq-title">
+      <h2 class="faqTitle" id="faq-title">Matchday <span class="accent">FAQ</span></h2>
+      <div class="faqCard">
+        <div class="faqItem">
+          <h3>What is Matchday?</h3>
+          <p>
+            <strong>Matchday</strong> is your home for daily football challenges. Test your
+            knowledge of clubs, players and iconic football moments with <strong>The XI</strong>
+            and the <strong>Football Grid</strong>, with new challenges every single day.
+          </p>
+        </div>
+        <div class="faqItem">
+          <h3>When do daily games reset?</h3>
+          <p>
+            New challenges are released every day at <strong>midnight</strong>, giving you a fresh
+            challenge to solve every 24 hours.
+          </p>
+        </div>
+        <div class="faqItem">
+          <h3>Can I play more than once a day?</h3>
+          <p>
+            Yes. The daily puzzle is always there, and the <strong>New grid</strong> /
+            <strong>New game</strong> buttons let you play as many practice boards as you like.
+            Only daily games count toward your streak.
+          </p>
+        </div>
+        <div class="faqItem">
+          <h3>Is there a timer?</h3>
+          <p>
+            Both games can be played with <strong>no timer</strong>, or as a
+            <strong>90-second</strong>, <strong>60-second</strong> or
+            <strong>40-second</strong> challenge.
+          </p>
+        </div>
+        <div class="faqItem">
+          <h3>Where does the data come from?</h3>
+          <p>
+            Player data is built from <strong>Wikidata</strong> (CC0) and photos come from
+            Wikimedia Commons. There are no API keys and no runtime rate limits.
+          </p>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    fetch('/data/players.json')
+      .then((r) => r.json())
+      .then((d) => {
+        const el = document.getElementById('dataset');
+        if (el) el.textContent = `${d.players.length.toLocaleString()} players in the database.`;
+      })
+      .catch(() => {});
+  </script>
+</Base>

@@ -1,0 +1,75 @@
+---
+import '../styles/global.css';
+import { SITE_NAME, GAMES } from '../config';
+
+interface Props {
+  title?: string;
+  description?: string;
+  theme?: string;
+}
+
+const { title, description, theme } = Astro.props;
+const path = Astro.url.pathname;
+const fullTitle = title ? `${title} · ${SITE_NAME}` : SITE_NAME;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{fullTitle}</title>
+    <meta
+      name="description"
+      content={description ?? 'Daily football games — build a lineup and fill the grid.'}
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body class={theme}>
+    <header class="site-header">
+      <div class="headerContainer">
+        <span class="headerSpacer" aria-hidden="true"></span>
+        <a class="brand" href="/">{SITE_NAME}<span class="dot">.</span></a>
+        <nav>
+          <a href={`/${GAMES.lineup.slug}`} aria-current={path.startsWith(`/${GAMES.lineup.slug}`) ? 'page' : undefined}>
+            {GAMES.lineup.name}
+          </a>
+          <a href={`/${GAMES.grid.slug}`} aria-current={path.startsWith(`/${GAMES.grid.slug}`) ? 'page' : undefined}>
+            {GAMES.grid.name}
+          </a>
+        </nav>
+      </div>
+    </header>
+    <main class="page">
+      <slot />
+    </main>
+    <footer class="site-footer">
+      <div class="footerInner">
+        <div class="footerCol brandCol">
+          <span class="footerLogo">{SITE_NAME}<span class="dot">.</span></span>
+          <p>
+            Daily football games. Test your knowledge of clubs and players with a fresh
+            challenge every day.
+          </p>
+        </div>
+        <div class="footerCol">
+          <h3>Quick Links</h3>
+          <a href={`/${GAMES.lineup.slug}`}>{GAMES.lineup.name}</a>
+          <a href={`/${GAMES.grid.slug}`}>{GAMES.grid.name}</a>
+        </div>
+        <div class="footerCol">
+          <h3>Data</h3>
+          <p>
+            Player data from <a href="https://www.wikidata.org" rel="noopener">Wikidata</a> (CC0),
+            photos from Wikimedia Commons.
+          </p>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

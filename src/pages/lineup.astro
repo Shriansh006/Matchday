@@ -1,0 +1,78 @@
+---
+import Base from '../layouts/Base.astro';
+import { GAMES } from '../config';
+---
+
+<Base theme="theme-grid" title={GAMES.lineup.name} description={GAMES.lineup.tagline}>
+  <div class="container-site">
+    <p class="gameTitlee">
+      <span class="spanFutbol">Matchday</span> <span class="span11">XI</span>
+    </p>
+
+    <div id="start-screen" class="gameInfo" hidden>
+      <p class="gameInfoText">
+        <strong>The XI</strong> is a daily football game where you have to add players from
+        11 different clubs into one lineup.
+      </p>
+      <p class="gameInfoText">- Clubs will appear in random order, and you must add a <strong>current</strong> player from each club.</p>
+      <p class="gameInfoText">- Each player fills one of their positions; if they fit several open positions you choose.</p>
+      <p class="gameInfoText">- Complete the full lineup to win.</p>
+      <p class="gameInfoText">- You can give up by clicking the White Flag button.</p>
+      <p class="gameInfoText">Choose your difficulty:</p>
+      <div class="labels" id="mode-labels"></div>
+      <p class="gameInfoText">Choose your timer:</p>
+      <div class="labels" id="timer-labels"></div>
+      <button class="startGame" id="start-button" type="button">Start Game</button>
+    </div>
+
+    <div id="game-screen" hidden>
+      <div class="teamBar">
+        <div class="teamCard" id="team-card"></div>
+        <div class="timerCircle" id="timer-circle" hidden><span id="box-timer">0</span></div>
+      </div>
+
+      <div class="pitch" id="pitch"></div>
+
+      <div class="searchRow">
+        <div class="guess-wrap">
+          <input
+            id="guess"
+            class="searchPlayerInput"
+            type="text"
+            placeholder="Type the footballer here"
+            autocomplete="off"
+            autocorrect="off"
+            spellcheck="false"
+          />
+          <ul id="suggestions" class="list" hidden></ul>
+        </div>
+        <button id="give-up" class="flagGiveUp" type="button" title="Give up">⚑</button>
+      </div>
+
+      <p class="gameMessage" id="message"></p>
+      <div class="actionRow">
+        <button class="btn2" id="reveal" type="button" hidden>Reveal answers</button>
+        <button class="btn2 gold" id="new-game" type="button">New game</button>
+      </div>
+    </div>
+
+    <button class="statsCircle" id="stats-button" type="button" title="Stats" hidden>i</button>
+  </div>
+
+  <div class="overlay" id="giveup-overlay" hidden>
+    <div class="modal-box">
+      <button class="modalClose" id="giveup-x" type="button">✕</button>
+      <p class="modalText">Confirm you want to give up</p>
+      <button class="buttonText" id="giveup-yes" type="button">Yes</button>
+      <button class="buttonText" id="giveup-no" type="button">No</button>
+    </div>
+  </div>
+
+  <div class="overlay" id="stats-overlay" hidden>
+    <div class="statsModal" id="stats-content"></div>
+  </div>
+
+  <script>
+    import '../scripts/lineup.ts';
+  </script>
+</Base>

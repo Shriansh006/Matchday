@@ -1,0 +1,86 @@
+---
+import Base from '../layouts/Base.astro';
+import { GAMES } from '../config';
+---
+
+<Base theme="theme-grid" title={GAMES.grid.name} description={GAMES.grid.tagline}>
+  <div class="container-site">
+    <p class="gameTitlee">
+      <span class="spanFutbol">Matchday</span> <span class="span11">Grid</span>
+    </p>
+
+    <div id="start-screen" class="gameInfo" hidden>
+      <p class="gameInfoText">
+        <strong>Football Grid</strong> (Football Tic Tac Toe) is a daily football challenge
+        featuring a 3x3 grid that players must complete by filling in 9 footballers who fit
+        both the row and column criteria. Each grid combines different football clubs and
+        countries.
+      </p>
+      <p class="gameInfoText">
+        - If a footballer fits multiple spots, you get to select.
+      </p>
+      <p class="gameInfoText">
+        - If only one footballer fits a spot, he'll be added automatically, even if he fits
+        elsewhere too.
+      </p>
+      <p class="gameInfoText">Select your mode below:</p>
+      <div class="labels" id="level-labels"></div>
+      <p class="gameInfoText">Select your timer below:</p>
+      <div class="labels" id="timer-labels"></div>
+      <button class="startGame" id="start-button" type="button">Start Game</button>
+    </div>
+
+    <div id="game-screen" hidden>
+      <div class="mainDiv">
+        <div class="gridOverview">
+          <div class="gridRow" id="grid-top"></div>
+          <div class="otherRows">
+            <div class="rowHeads" id="row-heads"></div>
+            <div class="boxcontainer" id="cells"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="searchRow">
+        <div class="guess-wrap">
+          <input
+            id="guess"
+            class="searchPlayerInput"
+            type="text"
+            placeholder="Type the footballer here"
+            autocomplete="off"
+            autocorrect="off"
+            spellcheck="false"
+          />
+          <ul id="suggestions" class="list" hidden></ul>
+        </div>
+        <button id="give-up" class="flagGiveUp" type="button" title="Give up">⚑</button>
+      </div>
+
+      <p class="gameMessage" id="message"></p>
+      <div class="actionRow">
+        <button class="btn2" id="reveal" type="button" hidden>Reveal answers</button>
+        <button class="btn2 gold" id="new-grid" type="button">New grid</button>
+      </div>
+    </div>
+
+    <button class="statsCircle" id="stats-button" type="button" title="Stats" hidden>i</button>
+  </div>
+
+  <div class="overlay" id="giveup-overlay" hidden>
+    <div class="modal-box">
+      <button class="modalClose" id="giveup-x" type="button">✕</button>
+      <p class="modalText">Confirm you want to give up</p>
+      <button class="buttonText" id="giveup-yes" type="button">Yes</button>
+      <button class="buttonText" id="giveup-no" type="button">No</button>
+    </div>
+  </div>
+
+  <div class="overlay" id="stats-overlay" hidden>
+    <div class="statsModal" id="stats-content"></div>
+  </div>
+
+  <script>
+    import '../scripts/grid.ts';
+  </script>
+</Base>
