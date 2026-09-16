@@ -109,6 +109,8 @@ scripts/extract-names.mjs            scripts/fetch-players.mjs
 
    Fields: `P1532` country for sport (falls back to `P27` citizenship), `P413`
    position, `P54` club(s), `P569` date of birth, `P2048` height, `P18` image.
+   The source bundle's `nickname` values are extracted too (`data/source-nicknames.json`)
+   and merged in, so players like Raphinha are found by their common name.
 3. **`scripts/fetch-current-clubs.mjs`** resolves each player's **current**
    club(s) from the `P54` statements (preferred rank, else no end date, else the
    latest start date), dropping national/youth sides. Output:
@@ -127,7 +129,8 @@ current club.
     {
       "id": "Q615",
       "name": "Lionel Messi",
-      "label": "Lionel Messi",
+      "label": "Lionel Messi",          // Wikidata label
+      "nickname": "Raphinha",            // set when the source has one
       "country": "Argentina",          // P1532, else first P27
       "countries": ["Spain", "Italy", "Argentina"],
       "positions": ["midfielder", "forward"],

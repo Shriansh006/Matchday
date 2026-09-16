@@ -4,13 +4,17 @@
 // flag, stats, plus a "New game" button for unlimited play.
 import {
   buildIndex,
+  buildSearch,
+  displayName,
   hashString,
+  lastNameOf,
   loadData,
   normalizeName,
   randomSeed,
   todaySeed,
   type Index,
   type Player,
+  type PlayerSearch,
 } from './shared';
 import { jerseySvg } from './club-style';
 import {
@@ -96,7 +100,7 @@ let timerId: number | null = null;
 let pendingPlayer: string | null = null;
 let suggestionIndex = 0;
 let suggestions: Player[] = [];
-let searchCache: { p: Player; name: string; last: string }[] = [];
+let search: PlayerSearch;
 
 function defaultDaily(): DailyState {
   return {
@@ -119,9 +123,9 @@ function defaultStats(): StatsData {
 }
 
 const player = (id: string): Player | undefined => index.byId.get(id);
-const lastName = (name: string): string => name.trim().split(/\s+/).pop() ?? name;
-const firstName = (name: string): string => {
-  const parts = name.trim().split(/\s+/);
+const lastName = (p: Player): string => lastNameOf(displayName(p));
+const firstName = (p: Player): string => {
+  const parts = displayName(p).trim().split(/\s+/);
   return parts.length > 1 ? parts.slice(0, -1).join(' ') : '';
 };
 
@@ -133,8 +137,8 @@ function escapeHtml(s: string): string {
     .replace(/"/g, '&quot;');
 }
 
-function initials(name: string): string {
-  return name
+function initials(p: Player): string {
+  return displayName(p)
     .split(/\s+/)
     .filter(Boolean)
     .slice(0, 2)
@@ -339,7 +343,7 @@ function renderPitch(): void {
         } else if (p) {
           const span = document.createElement('span');
           span.className = 'slotInitials';
-          span.textContent = initials(p.name);
+          span.textContent = initials(p);
           circle.append(span);
         }
       } else if (slot.option) {
@@ -352,7 +356,7 @@ function renderPitch(): void {
 
       const label = document.createElement('p');
       label.className = 'slotLabel';
-      label.textContent = slot.playerId ? lastName(player(slot.playerId)?.name ?? '') : '';
+      label.textContent = slot.playerId ? lastName(player(slot.playerId)!) : '';
 
       card.append(circle, label);
       row.append(card);
@@ -403,7 +407,7 @@ function chooseSlot(i: number): void {
   if (!slot.option || !pendingPlayer) return;
   const id = pendingPlayer;
   place(i, id);
-  setMessage(`${lastName(player(id)!.name)} added as ${SLOT_LABELS[slot.position]}`);
+  setMessage(`${lastName(player(id)!)} added as ${SLOT_LABELS[slot.position]}`);
   checkWin();
 }
 
@@ -423,7 +427,7 @@ function submitPlayer(id: string | null): void {
   if (!p) return;
 
   if (!team.squad.includes(id)) {
-    setMessage(`${lastName(p.name)} doesn't play for ${team.club}`);
+    setMessage(`${lastName(p)} doesn't play for ${team.club}`);
     return;
   }
 
@@ -433,7 +437,7 @@ function submitPlayer(id: string | null): void {
     .filter(({ s }) => !s.playerId && slots.has(s.position));
 
   if (matching.length === 0) {
-    setMessage(`${lastName(p.name)} has no open position in this formation`);
+    setMessage(`${lastName(p)} has no open position in this formation`);
     return;
   }
 
@@ -445,7 +449,7 @@ function submitPlayer(id: string | null): void {
   if (viable.length === 1) {
     const pos = daily.lineup[viable[0].i].position;
     place(viable[0].i, id);
-    setMessage(`${lastName(p.name)} added as ${SLOT_LABELS[pos]}`);
+    setMessage(`${lastName(p)} added as ${SLOT_LABELS[pos]}`);
     checkWin();
     return;
   }
@@ -455,7 +459,7 @@ function submitPlayer(id: string | null): void {
     daily.lineup[i].option = true;
   });
   renderPitch();
-  setMessage(`Choose a position for ${lastName(p.name)}`);
+  setMessage(`Choose a position for ${lastName(p)}`);
 }
 
 function checkWin(): void {
@@ -553,27 +557,6 @@ function updateTimer(): void {
 }
 
 // --- search ----------------------------------------------------------------
-function buildSearchCache(): void {
-  searchCache = index.players.map((p) => ({
-    p,
-    name: normalizeName(p.name),
-    last: normalizeName(lastName(p.name)),
-  }));
-}
-function searchPlayers(query: string): Player[] {
-  const matches: Player[] = [];
-  for (const entry of searchCache) {
-    if (entry.name.startsWith(query) || entry.last.startsWith(query)) matches.push(entry.p);
-  }
-  matches.sort((a, b) => {
-    const exact = (p: Player) => {
-      const n = normalizeName(p.name);
-      return n === query || normalizeName(lastName(p.name)) === query ? 0 : 1;
-    };
-    return exact(a) - exact(b);
-  });
-  return matches.slice(0, 20);
-}
 function clearSuggestions(): void {
   suggestions = [];
   suggestionsEl.hidden = true;
@@ -590,8 +573,8 @@ function renderSuggestions(list: Player[]): void {
   list.forEach((p, i) => {
     const li = document.createElement('li');
     if (i === suggestionIndex) li.className = 'chosen';
-    const first = firstName(p.name);
-    li.innerHTML = `${first ? `${escapeHtml(first)} ` : ''}<span class="bold">${escapeHtml(lastName(p.name))}</span>`;
+    const first = firstName(p);
+    li.innerHTML = `${first ? `${escapeHtml(first)} ` : ''}<span class="bold">${escapeHtml(lastName(p))}</span>`;
     li.addEventListener('mouseover', () => {
       suggestionIndex = i;
       [...suggestionsEl.children].forEach((c, ci) => c.classList.toggle('chosen', ci === i));
@@ -610,7 +593,7 @@ function onGuessInput(): void {
     clearSuggestions();
     return;
   }
-  renderSuggestions(searchPlayers(q));
+  renderSuggestions(search.search(q));
 }
 function onGuessKey(e: KeyboardEvent): void {
   if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
@@ -703,7 +686,7 @@ async function boot(): Promise<void> {
     return;
   }
   clubPool = eligibleClubs(squads);
-  buildSearchCache();
+  search = buildSearch(index.players);
   stats = loadStats();
   daily = loadDaily();
 

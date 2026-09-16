@@ -10,7 +10,9 @@
 import { readFileSync } from 'node:fs';
 import {
   buildIndex,
+  buildSearch,
   clubList,
+  displayName,
   hashString,
   normalizeName,
   type Index,
@@ -270,6 +272,26 @@ for (const [name, country, club] of checks) {
   console.log(`  ${ok ? 'ok  ' : 'FAIL'} ${name}`);
   if (!ok) failures++;
 }
+
+// search must find players by nickname / label, not just legal name
+const search = buildSearch(index.players);
+const byName = (q: string) => search.search(normalizeName(q));
+const nickChecks: [string, string][] = [
+  ['Raphinha', 'Q28861547'],
+  ['Raphael Belloli', 'Q28861547'],
+];
+for (const [query, expectedId] of nickChecks) {
+  const hit = byName(query).some((p) => p.id === expectedId);
+  console.log(`  ${hit ? 'ok  ' : 'FAIL'} search "${query}" finds the right player`);
+  if (!hit) failures++;
+}
+const raphinha = index.byId.get('Q28861547');
+const displayOk = !!raphinha && displayName(raphinha) === 'Raphinha';
+console.log(`  ${displayOk ? 'ok  ' : 'FAIL'} Raphinha displays as his nickname`);
+if (!displayOk) failures++;
+const nickData = index.players.filter((p) => p.nickname).length;
+console.log(`  players with a nickname: ${nickData}`);
+if (nickData < 100) failures++;
 
 console.log(failures === 0 ? '\nAll checks passed.' : `\n${failures} failure(s).`);
 process.exit(failures === 0 ? 0 : 1);

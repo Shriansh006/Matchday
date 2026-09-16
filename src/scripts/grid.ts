@@ -4,13 +4,17 @@
 // "New grid" button so you can play as many grids as you like.
 import {
   buildIndex,
+  buildSearch,
+  displayName,
   hashString,
+  lastNameOf,
   loadData,
   normalizeName,
   randomSeed,
   todaySeed,
   type Index,
   type Player,
+  type PlayerSearch,
 } from './shared';
 import { buildCategories, type GridCategory } from './categories';
 import { jerseySvg } from './club-style';
@@ -88,7 +92,7 @@ let timerId: number | null = null;
 let pendingPlayer: string | null = null;
 let suggestionIndex = 0;
 let suggestions: Player[] = [];
-let searchCache: { p: Player; name: string; last: string }[] = [];
+let search: PlayerSearch;
 let cellEls: HTMLDivElement[] = [];
 
 function defaultDaily(): DailyState {
@@ -113,9 +117,9 @@ function defaultStats(): StatsData {
 }
 
 const player = (id: string): Player | undefined => index.byId.get(id);
-const lastName = (name: string): string => name.trim().split(/\s+/).pop() ?? name;
-const firstName = (name: string): string => {
-  const parts = name.trim().split(/\s+/);
+const lastName = (p: Player): string => lastNameOf(displayName(p));
+const firstName = (p: Player): string => {
+  const parts = displayName(p).trim().split(/\s+/);
   return parts.length > 1 ? parts.slice(0, -1).join(' ') : '';
 };
 
@@ -312,14 +316,14 @@ function renderCell(i: number): void {
         const np = document.createElement('div');
         np.className = 'nameParagraph';
         const npText = document.createElement('p');
-        npText.textContent = lastName(p.name);
+        npText.textContent = lastName(p);
         np.append(npText);
         inner.append(np);
       } else {
         const nameBox = document.createElement('span');
         nameBox.className = 'footballerNameBox';
-        const first = firstName(p.name);
-        nameBox.innerHTML = `${first ? `${escapeHtml(first)} ` : ''}<span class="last">${escapeHtml(lastName(p.name))}</span>`;
+        const first = firstName(p);
+        nameBox.innerHTML = `${first ? `${escapeHtml(first)} ` : ''}<span class="last">${escapeHtml(lastName(p))}</span>`;
         inner.append(nameBox);
       }
     }
@@ -366,7 +370,7 @@ function chooseOption(i: number): void {
   resetOptions();
   place(i, id);
   saveDaily();
-  setMessage(`${lastName(player(id)!.name)} has been added in your selected spot`);
+  setMessage(`${lastName(player(id)!)} has been added in your selected spot`);
   checkWin();
 }
 
@@ -383,7 +387,7 @@ function submitFootballer(id: string | null): void {
   if (!p) return;
   const placed = daily.footballers.map((v) => (v === 'option' ? null : v));
   const decision = decidePlacement(puzzle!.columns, puzzle!.rows, placed, usedIds(), id);
-  const last = lastName(p.name);
+  const last = lastName(p);
 
   if (decision.kind === 'none') {
     setMessage(`There's no place for ${last}`);
@@ -546,29 +550,6 @@ function updateTimer(): void {
 }
 
 // --- search ----------------------------------------------------------------
-function buildSearchCache(): void {
-  searchCache = index.players.map((p) => ({
-    p,
-    name: normalizeName(p.name),
-    last: normalizeName(lastName(p.name)),
-  }));
-}
-
-function searchPlayers(query: string): Player[] {
-  const matches: Player[] = [];
-  for (const entry of searchCache) {
-    if (entry.name.startsWith(query) || entry.last.startsWith(query)) matches.push(entry.p);
-  }
-  matches.sort((a, b) => {
-    const exact = (p: Player) => {
-      const n = normalizeName(p.name);
-      return n === query || normalizeName(lastName(p.name)) === query ? 0 : 1;
-    };
-    return exact(a) - exact(b);
-  });
-  return matches.slice(0, 20);
-}
-
 function clearSuggestions(): void {
   suggestions = [];
   suggestionsEl.hidden = true;
@@ -586,8 +567,8 @@ function renderSuggestions(list: Player[]): void {
   list.forEach((p, i) => {
     const li = document.createElement('li');
     if (i === suggestionIndex) li.className = 'chosen';
-    const first = firstName(p.name);
-    const last = lastName(p.name);
+    const first = firstName(p);
+    const last = lastName(p);
     li.innerHTML = `${first ? `${escapeHtml(first)} ` : ''}<span class="bold">${escapeHtml(last)}</span>`;
     li.addEventListener('mouseover', () => {
       suggestionIndex = i;
@@ -608,7 +589,7 @@ function onGuessInput(): void {
     clearSuggestions();
     return;
   }
-  renderSuggestions(searchPlayers(q));
+  renderSuggestions(search.search(q));
 }
 
 function onGuessKey(e: KeyboardEvent): void {
@@ -679,7 +660,7 @@ async function boot(): Promise<void> {
   }
   categories = buildCategories(index);
   categories.forEach((c) => catById.set(c.id, c));
-  buildSearchCache();
+  search = buildSearch(index.players);
   stats = loadStats();
   daily = loadDaily();
 

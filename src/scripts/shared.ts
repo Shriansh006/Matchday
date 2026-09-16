@@ -58,6 +58,55 @@ export function normalizeName(s: string): string {
     .replace(/[^a-z0-9]/g, '');
 }
 
+export function lastNameOf(name: string): string {
+  return name.trim().split(/\s+/).pop() ?? name;
+}
+
+/** The name to show a player as: nickname, else Wikidata label, else full name. */
+export function displayName(p: Player): string {
+  return p.nickname || p.label || p.name;
+}
+
+export interface SearchEntry {
+  player: Player;
+  keys: string[];
+  lasts: string[];
+}
+
+export interface PlayerSearch {
+  search(query: string, limit?: number): Player[];
+}
+
+/** Build a searchable index over players' names, nicknames and labels. */
+export function buildSearch(players: Player[]): PlayerSearch {
+  const entries: SearchEntry[] = players.map((player) => {
+    const keys = new Set<string>();
+    const lasts = new Set<string>();
+    for (const s of [player.name, player.label, player.nickname]) {
+      if (!s) continue;
+      keys.add(normalizeName(s));
+      lasts.add(normalizeName(lastNameOf(s)));
+    }
+    return { player, keys: [...keys], lasts: [...lasts] };
+  });
+
+  return {
+    search(query: string, limit = 20): Player[] {
+      const matches: Player[] = [];
+      const exact: Player[] = [];
+      for (const e of entries) {
+        const hit =
+          e.keys.some((k) => k.startsWith(query)) ||
+          e.lasts.some((l) => l.startsWith(query));
+        if (!hit) continue;
+        const isExact = e.keys.includes(query) || e.lasts.includes(query);
+        (isExact ? exact : matches).push(e.player);
+      }
+      return [...exact, ...matches].slice(0, limit);
+    },
+  };
+}
+
 const NATIONAL = /\bnational\b.*\bteam\b/i;
 
 export function isNationalTeam(club: string): boolean {
@@ -83,7 +132,7 @@ export function buildIndex(data: GameData): Index {
 
   for (const p of players) {
     byId.set(p.id, p);
-    for (const n of new Set([p.name, p.label].filter(Boolean) as string[])) {
+    for (const n of new Set([p.name, p.label, p.nickname].filter(Boolean) as string[])) {
       const key = normalizeName(n);
       if (key && !byKey.has(key)) byKey.set(key, p);
     }
